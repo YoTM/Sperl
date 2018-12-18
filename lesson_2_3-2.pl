@@ -31,20 +31,58 @@ sub anagram {
     # { 'пятак' => ['пятак', 'пятка', 'тяпка'], 'листок' => ['листок', 'слиток', 'столик'], }
 
     my $arrayref = shift;
-
-    # $arrayref = map { lc $_ } @$arrayref;
-
-    # получили массив слов в нижнем регистре
-    my @input_array = map { lc $_ } @$arrayref;
-
-    # отсортировали сначала по длине, а затем (строки одной длины) лексикографически
-    my @sorted_array = sort { length $a <=> length $b || $a cmp $b } @input_array;
-
-    say Dumper \@sorted_array;
+    my %res_hash;
+    my @iter_array;
+	my @uses_words;
 
 
+    foreach (@{$arrayref}) {
+    	push(@iter_array, lc $_);
+    }
+    foreach my $word (@iter_array) {
+		say "Берем $word ";
+        # если очередное слово уже есть в ключах хэша результатов
+    	if ( exists $res_hash{ $word } ) {
+			say "$word - уже есть в ключах результа\n";
+    		next;
+    	}
+		# если очередное слово уже есть в списке найденных анаграмм
+		if (scalar grep {$_ eq $word} @uses_words)
+                {
+					say "$word - уже есть в списке использованных слов\n";
+                   	next;
+                }
+
+		# перебираем слова из списка по одному и сравниваем с очередным
+    	foreach my $w_iter (@iter_array) {
+    		# Проверяем есть ли слово в мн-ве результатов очередного слова
+    		if (scalar grep {$_ eq $w_iter} @{$res_hash{ $word }})
+                {
+					say "$w_iter - уже есть в мн-ве результов $word\n";
+                   	next;
+                }
+    		# проверяем пару слов на равенство длин
+    		if ( length $word == length $w_iter) {
+    			my @word = sort split (//, $word);
+    			my @w_iter = sort split (//, $w_iter);
+    			# проверяем слова на анаграмму
+    			if ( "@word" eq "@w_iter" ) {
+    				# Добавляем очередное слово ключём, а слово из списка в мн-во результатов хэша
+    				push( @{$res_hash{ $word }} , $w_iter );
+					# добавляем слово-анаграмму из списка в список уже найденных анаграмм
+					push( @uses_words, $w_iter );
+    			}
+    		}
+
+    	}
+        if ( @{$res_hash{ $word }} == 1) {
+    		delete $res_hash{$word};
+    	}
+    }
+    return \%res_hash;
 }
 
-my @list = ('пятак', 'ЛиСток', 'пятка', 'стул', 'ПяТаК', 'слиток', 'тяпка', 'столик', 'слиток');
+#my @list = ('пятак', 'ЛиСток', 'пятка', 'стул', 'ПяТаК', 'слиток', 'тяпка', 'столик', 'слиток');
+my @list = ('pyatak', 'LiStok', 'pyatka', 'stul', 'PyaTaK', 'slitok', 'tyapka', 'stolik', 'slitok');
 my $result = anagram(\@list);
 say "$_: @{$result->{$_}}" for sort keys %$result;
